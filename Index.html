@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickFixHub</title>
+<style>
+body { font-family: 'Roboto', sans-serif; background: #f0f4f8; margin: 0; padding: 0; }
+header { background: #ff6f61; color: white; text-align: center; padding: 25px; }
+h1 { margin: 0; font-size: 28px; }
+main { max-width: 950px; margin: 20px auto; padding: 0 20px; }
+.section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+input, select, button, textarea { width: 100%; padding: 12px; margin-top: 10px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+button { background: #ff6f61; color: white; border: none; cursor: pointer; transition: 0.3s; }
+button:hover { background: #e65b50; }
+h2 { color: #ff6f61; margin-bottom: 10px; }
+.card { border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 12px; background: #fdfdfd; }
+.status-btn { padding: 6px 12px; margin-top: 8px; border: none; border-radius: 6px; cursor: pointer; }
+.pending { background: orange; color: white; }
+.accepted { background: green; color: white; }
+.completed { background: gray; color: white; }
+@media (max-width: 600px) { main { padding: 0 10px; } }
+</style>
+</head>
+<body>
+
+<header>
+<h1>QuickFixHub</h1>
+<p>Connect with trusted local electricians, plumbers, painters, and more</p>
+</header>
+
+<main>
+<!-- User Request Form -->
+<div class="section">
+<h2>Request a Service</h2>
+<input type="text" id="userName" placeholder="Your Name">
+<input type="text" id="userLocation" placeholder="Your Location">
+<select id="serviceType">
+<option value="">Select Service</option>
+<option value="Electrician">Electrician</option>
+<option value="Plumber">Plumber</option>
+<option value="Painter">Painter</option>
+<option value="Carpenter">Carpenter</option>
+</select>
+<textarea id="serviceDesc" placeholder="Describe your problem..."></textarea>
+<button onclick="addRequest()">Submit Request</button>
+</div>
+
+<!-- Service Requests List -->
+<div class="section">
+<h2>Service Requests</h2>
+<div id="requestList"></div>
+</div>
+
+<!-- Providers List -->
+<div class="section">
+<h2>Available Service Providers</h2>
+<select id="filterType" onchange="filterProviders()">
+<option value="">All Services</option>
+<option value="Electrician">Electrician</option>
+<option value="Plumber">Plumber</option>
+<option value="Painter">Painter</option>
+<option value="Carpenter">Carpenter</option>
+</select>
+<input type="text" id="filterLocation" placeholder="Filter by location" oninput="filterProviders()">
+<div id="providerList"></div>
+</div>
+
+<!-- Self-Register Provider Form -->
+<div class="section">
+<h2>Register as Provider</h2>
+<input type="text" id="regName" placeholder="Your Name">
+<input type="text" id="regService" placeholder="Service Type">
+<input type="text" id="regPhone" placeholder="Phone Number">
+<input type="text" id="regLocation" placeholder="Location">
+<input type="number" id="regRating" placeholder="Rating (0–5)">
+<button onclick="registerProvider()">Register Provider</button>
+</div>
+
+<!-- Optional Remove Provider -->
+<div class="section">
+<h2>Remove Provider</h2>
+<input type="text" id="removeName" placeholder="Provider Name to Remove">
+<button onclick="removeProvider()">Remove</button>
+</div>
+</main>
+
+<script>
+// Providers Array
+let providers = [
+{name: "Ravi Kumar", service: "Electrician", phone: "9876543210", location: "Delhi", rating: 4.5},
+{name: "Sunita Sharma", service: "Plumber", phone: "9123456780", location: "Noida", rating: 4.2}
+];
+
+const providerListDiv = document.getElementById('providerList');
+const requestListDiv = document.getElementById('requestList');
+const requests = [];
+
+function displayProviders(list = providers){
+  providerListDiv.innerHTML="";
+  if(list.length===0){providerListDiv.innerHTML="<p>No providers found.</p>";return;}
+  list.forEach(p=>{
+    const card=document.createElement('div');
+    card.className="card";
+    card.innerHTML=`<h3>${p.name} (${p.service})</h3><p>Location: ${p.location}</p><p>Phone: <a href="tel:${p.phone}">${p.phone}</a></p><p>Rating: ${p.rating} ⭐</p>`;
+    providerListDiv.appendChild(card);
+  });
+}
+displayProviders();
+
+function filterProviders(){
+  const type=document.getElementById('filterType').value;
+  const loc=document.getElementById('filterLocation').value.toLowerCase();
+  let filtered=providers;
+  if(type) filtered=filtered.filter(p=>p.service===type);
+  if(loc) filtered=filtered.filter(p=>p.location.toLowerCase().includes(loc));
+  displayProviders(filtered);
+}
+
+// Provider self-register
+function registerProvider(){
+  const name=document.getElementById('regName').value.trim();
+  const service=document.getElementById('regService').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  const location=document.getElementById('regLocation').value.trim();
+  const rating=parseFloat(document.getElementById('regRating').value)||0;
+  if(!name||!service||!phone||!location){alert("Fill all fields"); return;}
+  if(providers.some(p=>p.name===name && p.phone===phone)){alert("Provider already exists"); return;}
+  providers.push({name,service,phone,location,rating});
+  displayProviders();
+  document.getElementById('regName').value="";
+  document.getElementById('regService').value="";
+  document.getElementById('regPhone').value="";
+  document.getElementById('regLocation').value="";
+  document.getElementById('regRating').value="";
+}
+
+// Remove provider
+function removeProvider(){
+  const name=document.getElementById('removeName').value.trim();
+  if(!name){alert("Enter name"); return;}
+  if(!providers.some(p=>p.name===name)){alert("Provider not found"); return;}
+  providers=providers.filter(p=>p.name!==name);
+  displayProviders();
+  document.getElementById('removeName').value="";
+}
+
+// User Requests
+function addRequest(){
+  const name=document.getElementById('userName').value.trim();
+  const location=document.getElementById('userLocation').value.trim();
+  const service=document.getElementById('serviceType').value;
+  const desc=document.getElementById('serviceDesc').value.trim();
+  if(!name||!location||!service||!desc){alert("Fill all fields");return;}
+  const request={name,location,service,desc,status:"Pending"};
+  requests.push(request);
+  displayRequests();
+  document.getElementById('userName').value="";
+  document.getElementById('userLocation').value="";
+  document.getElementById('serviceType').value="";
+  document.getElementById('serviceDesc').value="";
+}
+
+function displayRequests(){
+  requestListDiv.innerHTML="";
+  if(requests.length===0){requestListDiv.innerHTML="<p>No requests yet.</p>";return;}
+  requests.forEach((r,i)=>{
+    const card=document.createElement('div');
+    card.className="card";
+    card.innerHTML=`<h3>${r.service} Request by ${r.name}</h3><p>Location: ${r.location}</p><p>Description: ${r.desc}</p><p>Status: <span id="status-${i}">${r.status}</span></p><button class="status-btn ${r.status.toLowerCase()}" onclick="changeStatus(${i})">Update Status</button>`;
+    requestListDiv.appendChild(card);
+  });
+}
+
+function changeStatus(i){
+  const r=requests[i];
+  if(r.status==="Pending") r.status="Accepted";
+  else if(r.status==="Accepted") r.status="Completed";
+  displayRequests();
+}
+</script>
+</body>
+  </html>
